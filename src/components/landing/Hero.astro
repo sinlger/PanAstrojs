@@ -1,73 +1,62 @@
 ---
-import OptimizedImage from "../../layouts/utilities/OptimizedImage.astro";
-
-const featuresList = [
-  {
-    title: "Astro, Tailwind CSS and Alpine.js",
-    description: "These are the popular technologies behind Syntro.",
-  },
-  {
-    title: "Includes 6 pages",
-    description:
-      "You will find this landing, FAQ, terms, privacy, sign up, and sign in pages.",
-  },
-  {
-    title: "Different sections",
-    description:
-      "The starter includes different feature sections, a pricing table, testimonial, CTA, and full forms.",
-  },
-];
 ---
 
 <section class="overflow-hidden">
-  <div class="px-8 pt-32 mx-auto md:px-12 lg:px-24 max-w-7xl relative">
-    <div class="max-w-2xl text-center mx-auto lg:text-balance mb-10">
-      <p class="text-sm leading-normal font-bold uppercase text-accent-600">
-        Tagline
-      </p>
-      <h2
-        class="text-xl/snug leading-tight tracking-tight sm:text-2xl/snug md:text-3xl/snug capitalize lg:text-4xl/snug mt-4 font-medium text-base-900">
-        An astro template built with Astro and Tailwind CSS for your next
-        project
-      </h2>
-      <p class="text-base leading-normal mt-4 text-base-500 font-medium">
-        The fastest method for working together on staging and temporary
-        environments.
-      </p>
-      <div
-        class="flex flex-wrap items-center gap-2 justify-center mx-auto mt-12">
-        <a
-          href="https://github.com/bekturaslan/syntro-astro"
-          class="flex items-center justify-center transition-all duration-200 focus:ring-2 focus:outline-none text-base-500 bg-white hover:bg-accent-100 ring-1 ring-base-200 focus:ring-accent-100 hover:text-accent-600 h-9 px-4 py-2 text-sm font-medium rounded-md">
-          Get This Template
-        </a>
-        <a
-          href="https://getastrothemes.com/free-astro-themes-templates/"
-          class="flex items-center justify-center transition-all duration-200 focus:ring-2 focus:outline-none text-white bg-accent-600 hover:bg-accent-700 focus:ring-accent-700/50 h-9 px-4 py-2 text-sm font-medium rounded-md">
-          More Free Astro themes
-        </a>
-      </div>
-    </div>
+  <header class="py-16 md:py-24 px-4 bg-white relative overflow-hidden">
+    <!-- 装饰性背景 -->
     <div
-      class="lg:gap-x-8 lg:grid-cols-3 max-w-4xl mt-8 mx-auto sm:gap-x-6 sm:gap-y-12 sm:grid sm:grid-cols-2 sm:space-y-0 space-y-6 text-center text-sm items-start">
-      {
-        featuresList.map(({ title, description }) => (
-          <div class="text-base-500 lg:text-balance">
-            <strong class="text-base-700">{title}</strong> ━ {description}
-          </div>
-        ))
-      }
-    </div>
-    <div class="relative w-full mx-auto max-w-7xl items-center py-12 pb-12">
-      <div class="p-10 bg-accent-50 rounded-2xl">
-        <OptimizedImage
-          src="/dashboard.png"
-          alt="#_"
-          width={1200}
-          height={700}
-          class="relative w-full ring-4 ring-base-50 border border-base-200 lg:rounded-2xl object-cover rounded"
-        />
+      class="absolute top-0 left-1/2 -translate-x-1/2 w-full h-full opacity-10 pointer-events-none"
+    >
+      <div
+        class="absolute top-[-10%] left-[10%] w-72 h-72 bg-blue-400 rounded-full blur-[100px]"
+      >
+      </div>
+      <div
+        class="absolute bottom-[10%] right-[10%] w-72 h-72 bg-indigo-400 rounded-full blur-[100px]"
+      >
       </div>
     </div>
-  </div>
+
+    <div class="max-w-3xl mx-auto text-center relative z-10">
+      <h1
+        class="text-4xl md:text-5xl font-extrabold text-slate-900 mb-6 tracking-tight"
+      >
+        搜你所想，直达网盘
+      </h1>
+      <p class="text-lg text-slate-500 mb-10">
+        收录超过 100,000+ 高质量资源，实时检测链接有效性
+      </p>
+
+      <!-- 搜索框 -->
+      <form class="relative group">
+        <input
+          type="text"
+          placeholder="输入电影、书籍、软件关键词..."
+          class="w-full px-6 py-4 md:py-5 bg-white border-2 border-slate-200 rounded-2xl text-lg shadow-xl outline-none focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10 transition-all placeholder:text-slate-400"
+        />
+        <button
+          type="submit"
+          class="absolute right-3 top-3 bottom-3 px-6 bg-blue-600 text-white font-bold rounded-xl hover:bg-blue-700 transition-colors shadow-lg shadow-blue-500/30"
+        >
+          搜索
+        </button>
+      </form>
+
+      <!-- 热门搜索标签 -->
+      <div
+        class="mt-6 flex flex-wrap justify-center gap-2 text-sm text-slate-400"
+      >
+        <span>热门搜索：</span>
+        <a href="#" class="hover:text-blue-500 underline decoration-dotted"
+          >死侍与金刚狼</a
+        >
+        <a href="#" class="hover:text-blue-500 underline decoration-dotted"
+          >黑神话悟空</a
+        >
+        <a href="#" class="hover:text-blue-500 underline decoration-dotted"
+          >2026考研资料</a
+        >
+      </div>
+    </div>
+  </header>
 </section>
