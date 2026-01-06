@@ -1,12 +1,11 @@
 ---
 import BaseLayout from "../layouts/BaseLayout.astro";
 import Hero from "../components/landing/Hero.astro";
+import Recommend from "../components/landing/Recommend.astro";
 import { Button } from "@/components/ui/button";
 ---
 
 <BaseLayout>
   <Hero />
-  <div class="flex justify-center py-8">
-    <Button client:load>Shadcn Button</Button>
-  </div>
+  <Recommend/>
 </BaseLayout>

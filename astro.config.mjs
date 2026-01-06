@@ -2,8 +2,15 @@ import { defineConfig, fontProviders } from "astro/config";
 import sitemap from "@astrojs/sitemap";
 import tailwindcss from "@tailwindcss/vite";
 import react from "@astrojs/react";
+import cloudflare from "@astrojs/cloudflare";
 
 export default defineConfig({
+  output: "server",
+  adapter: cloudflare({
+    platformProxy: {
+      enabled: true,
+    },
+  }),
   site: "https://yoursite.com",
   experimental: {
     fonts: [

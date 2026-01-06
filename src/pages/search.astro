@@ -1,0 +1,207 @@
+---
+import BaseLayout from "@/layouts/BaseLayout.astro";
+import { SearchFilters } from "@/components/react/SearchFilters";
+import { SearchResourceItem } from "@/components/react/SearchResourceItem";
+import { getDB, queryResources } from "@/server/db";
+import {
+  Pagination,
+  PaginationContent,
+  PaginationItem,
+  PaginationLink,
+  PaginationNext,
+  PaginationPrevious,
+  PaginationEllipsis,
+} from "@/components/ui/pagination";
+import { formatTimeAgo } from "@/lib/utils";
+
+const db = getDB(Astro);
+
+// Fetch filters data
+const categories = await queryResources(db, "SELECT * FROM categories ORDER BY id ASC");
+const netdiskTypes = await queryResources(db, "SELECT * FROM netdisk_types ORDER BY id ASC");
+
+// Parse query params
+const url = new URL(Astro.request.url);
+const q = url.searchParams.get("q") || "";
+const source = url.searchParams.get("source") || "";
+const category = url.searchParams.get("category") || "";
+const page = parseInt(url.searchParams.get("page") || "1");
+const pageSize = 10;
+const offset = (page - 1) * pageSize;
+
+// Build query
+let whereClauses = ["r.status = 1"];
+let params = [];
+
+if (q) {
+  whereClauses.push("(r.title LIKE ? OR r.description LIKE ?)");
+  params.push(`%${q}%`, `%${q}%`);
+}
+
+if (category && category !== "all") {
+  whereClauses.push("r.category_id = ?");
+  params.push(category);
+}
+
+// Source filtering is tricky because it's in a joined table and we want resources that HAVE this source
+// We will handle it in the main query logic
+let sourceFilterClause = "";
+if (source) {
+  const sources = source.split(",").map((s) => `'${s}'`).join(",");
+  // We need to find netdisk_types IDs for these codes
+  // For simplicity, let's assume we can join netdisk_types in the subquery
+  sourceFilterClause = `AND EXISTS (
+    SELECT 1 FROM resource_links rl2 
+    JOIN netdisk_types nt2 ON rl2.type_id = nt2.id 
+    WHERE rl2.resource_id = r.id AND nt2.code IN (${sources})
+  )`;
+}
+
+const whereSql = whereClauses.length > 0 ? `WHERE ${whereClauses.join(" AND ")}` : "";
+
+// Count query
+const countSql = `
+  SELECT COUNT(*) as count 
+  FROM resources r
+  ${whereSql}
+  ${sourceFilterClause}
+`;
+
+const countResult = await queryResources(db, countSql, params);
+const totalResults = countResult[0]?.count || 0;
+const totalPages = Math.ceil(totalResults / pageSize);
+
+// Data query
+// We join to get the "primary" link info. 
+// If specific sources are selected, we prefer showing a link from those sources.
+// Otherwise just the first link.
+const dataSql = `
+  SELECT 
+    r.id, 
+    r.title, 
+    r.description,
+    r.created_at,
+    rl.file_size, 
+    rl.is_valid,
+    rl.sharer_name,
+    rl.share_url,
+    nt.code as source_code,
+    nt.name as source_name
+  FROM resources r
+  JOIN resource_links rl ON r.id = rl.resource_id
+  JOIN netdisk_types nt ON rl.type_id = nt.id
+  ${whereSql}
+  ${sourceFilterClause}
+  GROUP BY r.id
+  ORDER BY r.created_at DESC
+  LIMIT ${pageSize} OFFSET ${offset}
+`;
+
+const resources = await queryResources(db, dataSql, params);
+
+// Helper for pagination links
+const getPageUrl = (p: number) => {
+  const newUrl = new URL(url);
+  newUrl.searchParams.set("page", String(p));
+  return newUrl.toString();
+};
+---
+
+<BaseLayout>
+  <div class="bg-slate-50 min-h-screen py-8">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      <div class="flex flex-col lg:flex-row gap-8">
+        <!-- Sidebar Filters -->
+        <aside class="w-full lg:w-64 flex-shrink-0">
+          <div class="bg-white rounded-2xl p-6 shadow-sm border border-slate-200 sticky top-24">
+            <SearchFilters 
+              client:load 
+              categories={categories} 
+              netdiskTypes={netdiskTypes}
+              initialSources={source ? source.split(",") : []}
+              initialCategory={category}
+            />
+          </div>
+        </aside>
+
+        <!-- Main Content -->
+        <main class="flex-1">
+          <!-- Header -->
+          <div class="flex items-center justify-between mb-6">
+            <h1 class="text-xl font-bold text-slate-800">
+              找到 <span class="text-blue-600">{totalResults}</span> 条结果
+            </h1>
+            <div class="flex items-center space-x-2">
+              <span class="text-sm text-slate-500">排序:</span>
+              <select class="text-sm border-none bg-transparent font-medium text-slate-700 focus:ring-0 cursor-pointer">
+                <option>最相关</option>
+                <option>最新发布</option>
+              </select>
+            </div>
+          </div>
+
+          <!-- Results List -->
+          <div class="space-y-4 mb-8">
+            {resources.length > 0 ? (
+              resources.map((resource: any) => (
+                <SearchResourceItem
+                  title={resource.title}
+                  description={resource.description}
+                  sourceCode={resource.source_code || "unknown"}
+                  sharer={resource.sharer_name}
+                  timeAgo={formatTimeAgo(resource.created_at)}
+                  size={resource.file_size}
+                  status={resource.is_valid}
+                  link={resource.share_url}
+                />
+              ))
+            ) : (
+              <div class="text-center py-12 bg-white rounded-2xl border border-slate-200">
+                <p class="text-slate-500">未找到相关资源</p>
+              </div>
+            )}
+          </div>
+
+          <!-- Pagination -->
+          {totalPages > 1 && (
+            <Pagination>
+              <PaginationContent>
+                <PaginationItem>
+                  <PaginationPrevious 
+                    href={page > 1 ? getPageUrl(page - 1) : undefined} 
+                    className={page <= 1 ? "pointer-events-none opacity-50" : ""}
+                  />
+                </PaginationItem>
+                
+                {Array.from({ length: totalPages }, (_, i) => i + 1).map((p) => {
+                  // Simple pagination logic: show all for now, or optimize if many pages
+                  if (totalPages > 7 && Math.abs(page - p) > 2 && p !== 1 && p !== totalPages) {
+                     if (Math.abs(page - p) === 3) return <PaginationItem><PaginationEllipsis /></PaginationItem>;
+                     return null;
+                  }
+                  return (
+                    <PaginationItem>
+                      <PaginationLink 
+                        href={getPageUrl(p)} 
+                        isActive={page === p}
+                      >
+                        {p}
+                      </PaginationLink>
+                    </PaginationItem>
+                  );
+                })}
+
+                <PaginationItem>
+                  <PaginationNext 
+                    href={page < totalPages ? getPageUrl(page + 1) : undefined}
+                    className={page >= totalPages ? "pointer-events-none opacity-50" : ""}
+                  />
+                </PaginationItem>
+              </PaginationContent>
+            </Pagination>
+          )}
+        </main>
+      </div>
+    </div>
+  </div>
+</BaseLayout>
