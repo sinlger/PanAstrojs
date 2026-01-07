@@ -1,14 +1,46 @@
 ---
+const { pathname } = Astro.url;
+const isHome = pathname === "/";
+import { Input } from "@/components/ui/input";
+import { Button } from "@/components/ui/button";
+import { Search } from "lucide-react";
 ---
 <nav class="sticky top-0 z-50 bg-white/80 backdrop-blur-md border-b border-slate-200"> 
     <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8"> 
         <div class="flex justify-between h-16 items-center"> 
-            <div class="flex items-center gap-2"> 
-                <div class="w-8 h-8 bg-blue-600 rounded-lg flex items-center justify-center text-white font-bold">P</div> 
-                <span class="text-xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-blue-600 to-indigo-600"> 
-                    云盘聚合 
-                </span> 
-            </div> 
+            <div class="flex items-center gap-8">
+                <a href="/" class="flex items-center gap-2"> 
+                    <div class="w-8 h-8 bg-blue-600 rounded-lg flex items-center justify-center text-white font-bold">P</div> 
+                    <span class="text-xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-blue-600 to-indigo-600"> 
+                        云盘聚合 
+                    </span> 
+                </a>
+
+                {
+                    !isHome && (
+                        <form action="/search" method="GET" class="hidden md:flex relative group w-96">
+                            <div class="relative w-full transition-transform duration-300 hover:scale-[1.01]">
+                                <Input
+                                    name="q"
+                                    type="text"
+                                    placeholder="输入关键词搜索..."
+                                    className="w-full pl-4 pr-12 py-2 bg-slate-100/50 border-slate-200 rounded-xl text-sm focus-visible:ring-2 focus-visible:ring-blue-500/10 focus-visible:border-blue-500 transition-all h-10"
+                                />
+                                <div class="absolute right-1 top-1 bottom-1">
+                                    <Button
+                                        type="submit"
+                                        size="icon"
+                                        className="h-8 w-8 bg-blue-600 hover:bg-blue-700 text-white rounded-lg shadow-sm transition-all"
+                                    >
+                                        <Search className="w-4 h-4" />
+                                    </Button>
+                                </div>
+                            </div>
+                        </form>
+                    )
+                }
+            </div>
+
             <div class="hidden md:flex items-center space-x-8 text-sm font-medium text-slate-600"> 
                 <a href="#" class="hover:text-blue-600 transition-colors">最新资源</a> 
                 <a href="#" class="hover:text-blue-600 transition-colors">热门分类</a> 

@@ -28,7 +28,7 @@ export function SearchFilters({
   initialCategory = "all",
 }: SearchFiltersProps) {
   const [selectedSources, setSelectedSources] = React.useState<string[]>(initialSources);
-  const [selectedCategory, setSelectedCategory] = React.useState<string>(initialCategory);
+  const [selectedCategory, setSelectedCategory] = React.useState<string>(initialCategory || "all");
 
   const handleSourceChange = (code: string, checked: boolean) => {
     let newSources = [...selectedSources];

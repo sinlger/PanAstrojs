@@ -2,6 +2,7 @@
 import BaseLayout from "@/layouts/BaseLayout.astro";
 import { SearchFilters } from "@/components/react/SearchFilters";
 import { SearchResourceItem } from "@/components/react/SearchResourceItem";
+import { SearchSort } from "@/components/react/SearchSort";
 import { getDB, queryResources } from "@/server/db";
 import {
   Pagination,
@@ -25,6 +26,7 @@ const url = new URL(Astro.request.url);
 const q = url.searchParams.get("q") || "";
 const source = url.searchParams.get("source") || "";
 const category = url.searchParams.get("category") || "";
+const sort = url.searchParams.get("sort") || "created";
 const page = parseInt(url.searchParams.get("page") || "1");
 const pageSize = 10;
 const offset = (page - 1) * pageSize;
@@ -59,46 +61,51 @@ if (source) {
 
 const whereSql = whereClauses.length > 0 ? `WHERE ${whereClauses.join(" AND ")}` : "";
 
-// Count query
-const countSql = `
-  SELECT COUNT(*) as count 
-  FROM resources r
-  ${whereSql}
-  ${sourceFilterClause}
-`;
-
-const countResult = await queryResources(db, countSql, params);
-const totalResults = countResult[0]?.count || 0;
-const totalPages = Math.ceil(totalResults / pageSize);
+// Determine sort order
+const sortMap: Record<string, string> = {
+  created: "r.created_at DESC",
+  updated: "r.updated_at DESC",
+  shared: "r.created_at DESC",
+};
+const orderBy = sortMap[sort] || "r.created_at DESC";
 
 // Data query
 // We join to get the "primary" link info. 
 // If specific sources are selected, we prefer showing a link from those sources.
 // Otherwise just the first link.
 const dataSql = `
+  WITH FilteredResources AS (
+    SELECT 
+      r.id, 
+      r.title, 
+      r.description,
+      r.created_at,
+      r.updated_at,
+      rl.file_size, 
+      rl.is_valid,
+      rl.sharer_name,
+      rl.share_url,
+      nt.code as source_code,
+      nt.name as source_name
+    FROM resources r
+    LEFT JOIN resource_links rl ON r.id = rl.resource_id
+    LEFT JOIN netdisk_types nt ON rl.type_id = nt.id
+    ${whereSql}
+    ${sourceFilterClause}
+    GROUP BY r.id
+  )
   SELECT 
-    r.id, 
-    r.title, 
-    r.description,
-    r.created_at,
-    rl.file_size, 
-    rl.is_valid,
-    rl.sharer_name,
-    rl.share_url,
-    nt.code as source_code,
-    nt.name as source_name
-  FROM resources r
-  JOIN resource_links rl ON r.id = rl.resource_id
-  JOIN netdisk_types nt ON rl.type_id = nt.id
-  ${whereSql}
-  ${sourceFilterClause}
-  GROUP BY r.id
-  ORDER BY r.created_at DESC
+    *, 
+    COUNT(*) OVER() as total_count
+  FROM FilteredResources r
+  ORDER BY ${orderBy}
   LIMIT ${pageSize} OFFSET ${offset}
 `;
 
 const resources = await queryResources(db, dataSql, params);
-
+console.log(resources)
+const totalResults = resources.length > 0 ? (resources[0] as any).total_count : 0;
+const totalPages = Math.ceil(totalResults / pageSize);
 // Helper for pagination links
 const getPageUrl = (p: number) => {
   const newUrl = new URL(url);
@@ -131,13 +138,7 @@ const getPageUrl = (p: number) => {
             <h1 class="text-xl font-bold text-slate-800">
               找到 <span class="text-blue-600">{totalResults}</span> 条结果
             </h1>
-            <div class="flex items-center space-x-2">
-              <span class="text-sm text-slate-500">排序:</span>
-              <select class="text-sm border-none bg-transparent font-medium text-slate-700 focus:ring-0 cursor-pointer">
-                <option>最相关</option>
-                <option>最新发布</option>
-              </select>
-            </div>
+            <SearchSort client:load initialSort={sort} />
           </div>
 
           <!-- Results List -->

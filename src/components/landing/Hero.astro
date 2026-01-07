@@ -31,11 +31,12 @@ import { Search } from "lucide-react";
       </p>
 
       <!-- 搜索框 -->
-      <form class="relative group max-w-2xl mx-auto">
+      <form action="/search" method="GET" class="relative group max-w-2xl mx-auto">
         <div
           class="relative transition-transform duration-300 hover:scale-[1.01]"
         >
           <Input
+            name="q"
             type="text"
             placeholder="输入电影、书籍、软件关键词..."
             className="w-full pl-6 pr-36 py-4 md:py-7 bg-white/80 backdrop-blur-xl border border-slate-200/60 rounded-2xl text-lg shadow-2xl shadow-blue-900/5 focus-visible:ring-4 focus-visible:ring-blue-500/10 focus-visible:border-blue-500 transition-all placeholder:text-slate-400 h-auto"

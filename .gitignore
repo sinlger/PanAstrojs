@@ -30,3 +30,6 @@ package-lock.json
 # Local Netlify folder
 .netlify
 .vercel
+
+# Cloudflare Wrangler
+.wrangler/
