@@ -46,11 +46,11 @@ console.log(latestResources);
     {
       latestResources.map((resource: any) => (
         <ResourceCard
+          id={resource.id}
           title={resource.title}
           date={formatTimeAgo(resource.created_at)}
           size={formatBytes(resource.file_size)}
           source={resource.source_code || "Unknown"}
-          link={resource.share_url || "#"}
         />
       ))
     }

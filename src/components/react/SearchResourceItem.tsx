@@ -3,6 +3,7 @@ import { Button } from "@/components/ui/button";
 import { formatBytes } from "@/lib/utils";
 
 interface SearchResourceItemProps {
+  id: number | string;
   title: string;
   description: string;
   sourceCode: string; // e.g. "quark"
@@ -10,7 +11,6 @@ interface SearchResourceItemProps {
   timeAgo: string;
   size: number;
   status: number; // 1: valid, 0: invalid, 2: unknown/pending
-  link: string;
 }
 
 const getBadgeStyle = (source: string) => {
@@ -45,6 +45,7 @@ const getStatusInfo = (status: number) => {
 };
 
 export function SearchResourceItem({
+  id,
   title,
   description,
   sourceCode,
@@ -52,7 +53,6 @@ export function SearchResourceItem({
   timeAgo,
   size,
   status,
-  link,
 }: SearchResourceItemProps) {
   const badgeStyle = getBadgeStyle(sourceCode);
   const statusInfo = getStatusInfo(status);
@@ -72,7 +72,7 @@ export function SearchResourceItem({
           </span>
         </div>
         <h3 className="text-lg font-bold text-slate-800 mb-2 leading-snug hover:text-blue-600 cursor-pointer transition-colors truncate">
-          <a href={link} target="_blank" rel="noopener noreferrer">
+          <a href={`/resource/${id}`}>
             {title}
           </a>
         </h3>
@@ -96,7 +96,7 @@ export function SearchResourceItem({
           className="rounded-full bg-slate-900 text-white hover:bg-slate-800 px-6 mt-auto"
           asChild
         >
-          <a href={link} target="_blank" rel="noopener noreferrer">
+          <a href={`/resource/${id}`}>
             详情
           </a>
         </Button>

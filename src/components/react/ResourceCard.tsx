@@ -3,11 +3,11 @@ import { Badge } from "@/components/ui/badge";
 import { HardDrive, ChevronRight } from "lucide-react";
 
 interface ResourceCardProps {
+  id: number | string;
   title: string;
   date: string;
   size: string;
   source: string;
-  link: string;
 }
 
 const getBadgeStyle = (source: string) => {
@@ -31,11 +31,11 @@ const getBadgeStyle = (source: string) => {
 };
 
 export function ResourceCard({
+  id,
   title,
   date,
   size,
   source,
-  link,
 }: ResourceCardProps) {
   return (
     <Card className="bg-white border border-slate-200 rounded-2xl card-hover shadow-sm hover:shadow-md transition-shadow flex flex-col justify-between">
@@ -51,9 +51,11 @@ export function ResourceCard({
           </Badge>
           <span className="text-[11px] text-slate-400">{date}</span>
         </div>
-        <h3 className="font-bold text-slate-800 leading-snug line-clamp-2 hover:text-blue-600 cursor-pointer transition-colors text-base">
-          {title}
-        </h3>
+        <a href={`/resource/${id}`}>
+          <h3 className="font-bold text-slate-800 leading-snug line-clamp-2 hover:text-blue-600 cursor-pointer transition-colors text-base">
+            {title}
+          </h3>
+        </a>
       </CardHeader>
       <CardContent className="p-5 pt-0 mt-5 flex items-center justify-between">
         <div className="flex items-center text-xs text-slate-400">
@@ -61,7 +63,7 @@ export function ResourceCard({
           {size}
         </div>
         <a
-          href={link}
+          href={`/resource/${id}`}
           className="text-xs font-bold text-blue-500 flex items-center group"
         >
           查看详情

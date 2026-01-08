@@ -146,6 +146,7 @@ const getPageUrl = (p: number) => {
             {resources.length > 0 ? (
               resources.map((resource: any) => (
                 <SearchResourceItem
+                  id={resource.id}
                   title={resource.title}
                   description={resource.description}
                   sourceCode={resource.source_code || "unknown"}
@@ -153,7 +154,6 @@ const getPageUrl = (p: number) => {
                   timeAgo={formatTimeAgo(resource.created_at)}
                   size={resource.file_size}
                   status={resource.is_valid}
-                  link={resource.share_url}
                 />
               ))
             ) : (
