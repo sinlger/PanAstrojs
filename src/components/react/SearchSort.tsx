@@ -15,23 +15,46 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from "@/components/ui/popover"
-const frameworks = [
+
+const sortOptions = [
   {
-    value: "next.js",
-    label: "默认排序",
-  }, {
-    value: "next.js",
+    value: "created",
     label: "最新入库",
   },
   {
-    value: "nuxt.js",
+    value: "updated",
     label: "最近更新",
   }
 ]
 
-export function SearchSort() {
+interface SearchSortProps {
+  initialSort?: string;
+}
+
+export function SearchSort({ initialSort = "default" }: SearchSortProps) {
   const [open, setOpen] = React.useState(false)
-  const [value, setValue] = React.useState("next.js")
+  const [sort, setSort] = React.useState(initialSort)
+
+  const handleSelect = (currentValue: string) => {
+    const newValue = currentValue === sort ? "" : currentValue;
+    if (!newValue) return; // Don't allow deselecting to empty
+
+    setSort(newValue);
+    setOpen(false);
+
+    // Update URL
+    const params = new URLSearchParams(window.location.search);
+    if (newValue === "default") {
+      params.delete("sort");
+    } else {
+      params.set("sort", newValue);
+    }
+    // Reset page to 1
+    params.set("page", "1");
+    
+    window.location.href = `${window.location.pathname}?${params.toString()}`;
+  };
+
   return (
     <Popover open={open} onOpenChange={setOpen}>
       <PopoverTrigger asChild>
@@ -41,31 +64,28 @@ export function SearchSort() {
           aria-expanded={open}
           className="w-[200px] justify-between"
         >
-          {value
-            ? frameworks.find((framework) => framework.value === value)?.label
-            : "Select framework..."}
+          {sort
+            ? sortOptions.find((option) => option.value === sort)?.label
+            : "排序方式..."}
           <ChevronsUpDown className="opacity-50" />
         </Button>
       </PopoverTrigger>
       <PopoverContent className="w-[200px] p-0">
         <Command>
           <CommandList>
-            <CommandEmpty>No framework found.</CommandEmpty>
+            <CommandEmpty>No option found.</CommandEmpty>
             <CommandGroup>
-              {frameworks.map((framework) => (
+              {sortOptions.map((option) => (
                 <CommandItem
-                  key={framework.value}
-                  value={framework.value}
-                  onSelect={(currentValue) => {
-                    setValue(currentValue === value ? "" : currentValue)
-                    setOpen(false)
-                  }}
+                  key={option.value}
+                  value={option.value}
+                  onSelect={handleSelect}
                 >
-                  {framework.label}
+                  {option.label}
                   <Check
                     className={cn(
                       "ml-auto",
-                      value === framework.value ? "opacity-100" : "opacity-0"
+                      sort === option.value ? "opacity-100" : "opacity-0"
                     )}
                   />
                 </CommandItem>

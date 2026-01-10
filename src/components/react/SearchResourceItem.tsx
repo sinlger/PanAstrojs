@@ -15,6 +15,18 @@ interface SearchResourceItemProps {
 
 const getBadgeStyle = (source: string) => {
   const lowerSource = source.toLowerCase();
+  
+  // Category-based colors (Brighter)
+  if (lowerSource.includes("视频")) return "bg-purple-100 text-purple-700 hover:bg-purple-200";
+  if (lowerSource.includes("音乐") || lowerSource.includes("音频")) return "bg-pink-100 text-pink-700 hover:bg-pink-200";
+  if (lowerSource.includes("软件") || lowerSource.includes("应用")) return "bg-blue-100 text-blue-700 hover:bg-blue-200";
+  if (lowerSource.includes("文档") || lowerSource.includes("书籍")) return "bg-yellow-100 text-yellow-700 hover:bg-yellow-200";
+  if (lowerSource.includes("图片") || lowerSource.includes("壁纸")) return "bg-emerald-100 text-emerald-700 hover:bg-emerald-200";
+  if (lowerSource.includes("游戏")) return "bg-red-100 text-red-700 hover:bg-red-200";
+  if (lowerSource.includes("教程") || lowerSource.includes("课程")) return "bg-cyan-100 text-cyan-700 hover:bg-cyan-200";
+  if (lowerSource.includes("压缩")) return "bg-orange-100 text-orange-700 hover:bg-orange-200";
+
+  // Legacy/Netdisk fallbacks (Keep for backward compatibility or mixed use)
   if (lowerSource.includes("quark") || lowerSource.includes("夸克")) {
     return "bg-blue-100 text-blue-700 hover:bg-blue-100";
   }

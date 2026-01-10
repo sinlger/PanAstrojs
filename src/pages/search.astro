@@ -86,10 +86,12 @@ const dataSql = `
       rl.sharer_name,
       rl.share_url,
       nt.code as source_code,
-      nt.name as source_name
+      nt.name as source_name,
+      c.name as category_name
     FROM resources r
     LEFT JOIN resource_links rl ON r.id = rl.resource_id
     LEFT JOIN netdisk_types nt ON rl.type_id = nt.id
+    LEFT JOIN categories c ON r.category_id = c.id
     ${whereSql}
     ${sourceFilterClause}
     GROUP BY r.id
@@ -149,7 +151,7 @@ const getPageUrl = (p: number) => {
                   id={resource.id}
                   title={resource.title}
                   description={resource.description}
-                  sourceCode={resource.source_code || "unknown"}
+                  sourceCode={resource.category_name || "未分类"}
                   sharer={resource.sharer_name}
                   timeAgo={formatTimeAgo(resource.created_at)}
                   size={resource.file_size}

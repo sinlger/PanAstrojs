@@ -1,9 +1,6 @@
 ---
-import { Button } from "@/components/ui/button";
 import { getDB, queryResources } from "@/server/db";
-import { CategoryFilter } from "@/components/react/CategoryFilter";
-import { ResourceCard } from "@/components/react/ResourceCard";
-import { formatBytes, formatTimeAgo } from "@/lib/utils";
+import { ResourceRecommender } from "@/components/react/ResourceRecommender";
 
 const db = getDB(Astro);
 const categories = await queryResources(db, "SELECT * FROM categories ORDER BY id ASC");
@@ -19,50 +16,24 @@ const latestResources = await queryResources(
     rl.file_size, 
     nt.code as source_code,
     nt.name as source_name,
+    c.name as category_name,
     rl.share_url
   FROM resources r
   LEFT JOIN resource_links rl ON r.id = rl.resource_id
   LEFT JOIN netdisk_types nt ON rl.type_id = nt.id
+  LEFT JOIN categories c ON r.category_id = c.id
   WHERE r.status = 1
   GROUP BY r.id
   ORDER BY r.created_at DESC
-  LIMIT 10`
+  LIMIT 12`
 );
-console.log(latestResources);
 ---
 
 <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
-  <div class="flex items-center justify-between mb-8 overflow-x-auto pb-2">
-    <CategoryFilter client:load categories={categories} />
-    <div class="hidden sm:block text-sm text-slate-400">
-      共收录 {totalResources.toLocaleString()} 条记录
-    </div>
-  </div>
-
-  <!-- 资源卡片网格 -->
-  <div
-    class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6"
-  >
-    {
-      latestResources.map((resource: any) => (
-        <ResourceCard
-          id={resource.id}
-          title={resource.title}
-          date={formatTimeAgo(resource.created_at)}
-          size={formatBytes(resource.file_size)}
-          source={resource.source_code || "Unknown"}
-        />
-      ))
-    }
-  </div>
-
-  <!-- 加载更多 -->
-  <div class="mt-12 text-center">
-    <Button
-      variant="outline"
-      className="px-8 py-3 h-auto bg-white border border-slate-200 text-slate-600 font-bold rounded-xl hover:bg-slate-50 transition-colors shadow-sm"
-    >
-      加载更多资源
-    </Button>
-  </div>
+  <ResourceRecommender 
+    client:load 
+    initialResources={latestResources} 
+    categories={categories}
+    totalResources={totalResources}
+  />
 </main>

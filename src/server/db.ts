@@ -21,3 +21,18 @@ export const queryResources = async (
     return [];
   }
 };
+
+export const runQuery = async (
+  db: D1Database,
+  query: string,
+  params: any[] = []
+) => {
+  try {
+    const stmt = db.prepare(query).bind(...params);
+    const result = await stmt.run();
+    return result;
+  } catch (error) {
+    console.error("Database execution failed:", error);
+    throw error;
+  }
+};

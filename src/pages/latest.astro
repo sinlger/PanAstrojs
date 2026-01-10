@@ -1,0 +1,139 @@
+---
+import BaseLayout from "@/layouts/BaseLayout.astro";
+import { getDB, queryResources } from "@/server/db";
+import { ResourceCard } from "@/components/react/ResourceCard";
+import { Button } from "@/components/ui/button";
+import { Separator } from "@/components/ui/separator";
+import { formatBytes, formatTimeAgo } from "@/lib/utils";
+import { ChevronRight, Sparkles } from "lucide-react";
+
+const db = getDB(Astro);
+
+// SQL query to fetch top 10 resources for each category
+// Uses window function ROW_NUMBER() to partition by category
+const sql = `
+  WITH RankedResources AS (
+    SELECT 
+      r.id, 
+      r.title, 
+      r.created_at,
+      MAX(rl.file_size) as file_size,
+      c.name as category_name,
+      c.id as category_id,
+      ROW_NUMBER() OVER (PARTITION BY r.category_id ORDER BY r.created_at DESC) as rn
+    FROM resources r
+    LEFT JOIN resource_links rl ON r.id = rl.resource_id
+    LEFT JOIN categories c ON r.category_id = c.id
+    WHERE r.status = 1 AND c.id IS NOT NULL
+    GROUP BY r.id
+  )
+  SELECT * FROM RankedResources WHERE rn <= 10 ORDER BY category_id ASC, created_at DESC
+`;
+
+const resources = await queryResources(db, sql);
+
+// Group resources by category
+interface Resource {
+  id: number;
+  title: string;
+  created_at: string;
+  file_size: number;
+  category_name: string;
+  category_id: number;
+}
+
+const groupedResources: Record<string, Resource[]> = {};
+const categoryOrder: string[] = [];
+
+resources.forEach((r: Resource) => {
+  if (!groupedResources[r.category_name]) {
+    groupedResources[r.category_name] = [];
+    categoryOrder.push(r.category_name);
+  }
+  groupedResources[r.category_name].push(r);
+});
+---
+
+<BaseLayout>
+  <div class="bg-slate-50 min-h-screen py-12">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      <!-- Page Header -->
+      <div class="mb-12">
+        <h1
+          class="text-3xl md:text-4xl font-extrabold text-slate-900 flex items-center gap-3"
+        >
+          <Sparkles className="w-8 h-8 text-blue-600" />
+          最新资源
+        </h1>
+        <p class="text-lg text-slate-500 mt-3 max-w-2xl">
+          每日更新全网最新资源，按分类为您精选呈现。
+        </p>
+      </div>
+
+      <div class="space-y-16">
+        {
+          categoryOrder.map((categoryName, index) => {
+            const categoryResources = groupedResources[categoryName];
+            const categoryId = categoryResources[0].category_id;
+
+            return (
+              <section class="scroll-mt-24" id={`category-${categoryId}`}>
+                <div class="flex items-center justify-between mb-6">
+                  <div class="flex items-center gap-4">
+                    <div class="h-8 w-1.5 bg-blue-600 rounded-full" />
+                    <h2 class="text-2xl font-bold text-slate-800">
+                      {categoryName}
+                    </h2>
+                    <span class="hidden sm:inline-flex items-center justify-center bg-blue-50 text-blue-700 text-xs font-bold px-2.5 py-1 rounded-full">
+                      Top 10
+                    </span>
+                  </div>
+
+                  <Button variant="link" className="text-slate-500">
+                    <a href={`/search?category=${categoryId}&sort=created`}>
+                      查看更多
+                    </a>
+                    <ChevronRight className="w-4 h-4" />
+                  </Button>
+                </div>
+
+                <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+                  {categoryResources.map((resource) => (
+                    <ResourceCard
+                      client:visible
+                      id={resource.id}
+                      title={resource.title}
+                      date={formatTimeAgo(resource.created_at)}
+                      size={formatBytes(resource.file_size)}
+                      source={resource.category_name}
+                    />
+                  ))}
+                </div>
+
+                {index < categoryOrder.length - 1 && (
+                  <div class="mt-16">
+                    <Separator className="bg-slate-200" />
+                  </div>
+                )}
+              </section>
+            );
+          })
+        }
+
+        {
+          categoryOrder.length === 0 && (
+            <div class="flex flex-col items-center justify-center py-24 bg-white rounded-3xl border border-slate-200 border-dashed">
+              <div class="bg-slate-50 p-6 rounded-full mb-6">
+                <Sparkles className="w-12 h-12 text-slate-300" />
+              </div>
+              <h3 class="text-xl font-bold text-slate-900">暂无资源</h3>
+              <p class="text-slate-500 mt-2">
+                目前还没有收录任何资源，请稍后再来看看。
+              </p>
+            </div>
+          )
+        }
+      </div>
+    </div>
+  </div>
+</BaseLayout>

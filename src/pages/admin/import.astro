@@ -1,0 +1,234 @@
+---
+import BaseLayout from "@/layouts/BaseLayout.astro";
+import { getDB, queryResources } from "@/server/db";
+
+const db = getDB(Astro);
+const categories = await queryResources(db, "SELECT * FROM categories");
+---
+
+<BaseLayout>
+  <div class="bg-slate-50 min-h-screen py-12">
+    <div class="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8">
+      <div class="bg-white rounded-2xl p-8 shadow-sm border border-slate-200">
+        <h1 class="text-2xl font-bold text-slate-800 mb-6">Telegram 数据导入</h1>
+        
+        <div class="space-y-6">
+          <div id="upload-section">
+            <label class="block text-sm font-medium text-slate-700 mb-2">
+              上传 Telegram 导出文件 (.json)
+            </label>
+            <div class="flex items-center justify-center w-full">
+              <label for="file-upload" class="flex flex-col items-center justify-center w-full h-32 border-2 border-slate-300 border-dashed rounded-lg cursor-pointer bg-slate-50 hover:bg-slate-100 transition-colors">
+                <div class="flex flex-col items-center justify-center pt-5 pb-6">
+                  <p class="mb-2 text-sm text-slate-500"><span class="font-semibold">点击上传</span> 或拖拽文件到此处</p>
+                  <p class="text-xs text-slate-500">仅支持 JSON 格式</p>
+                </div>
+                <input id="file-upload" type="file" accept=".json" class="hidden" />
+              </label>
+            </div>
+          </div>
+
+          <!-- Preview & Classification Area -->
+          <div id="preview-area" class="hidden">
+            <h2 class="text-lg font-bold text-slate-800 mb-4 flex justify-between items-center">
+              <span>数据预览与分类</span>
+              <span class="text-xs text-slate-500 font-normal">请确认自动分类结果，如有误请手动修正</span>
+            </h2>
+            <div class="border border-slate-200 rounded-xl overflow-hidden max-h-[600px] overflow-y-auto">
+              <table class="min-w-full divide-y divide-slate-200">
+                <thead class="bg-slate-50 sticky top-0">
+                  <tr>
+                    <th class="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider w-20">ID</th>
+                    <th class="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">内容摘要</th>
+                    <th class="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider w-48">分类</th>
+                  </tr>
+                </thead>
+                <tbody id="preview-list" class="bg-white divide-y divide-slate-200">
+                  <!-- Items will be injected here -->
+                </tbody>
+              </table>
+            </div>
+            <div class="mt-4 flex justify-between items-center bg-blue-50 p-4 rounded-lg">
+                <div class="text-sm text-blue-700">
+                    已加载 <span id="total-count" class="font-bold">0</span> 条数据
+                </div>
+                <button
+                  id="start-import-btn"
+                  class="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors font-bold shadow-sm"
+                >
+                  确认并导入数据库
+                </button>
+            </div>
+          </div>
+
+          <!-- Progress/Log Area -->
+          <div id="log-area" class="hidden mt-6 p-4 bg-slate-900 rounded-lg font-mono text-sm text-green-400 max-h-96 overflow-y-auto">
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</BaseLayout>
+
+<script define:vars={{ categories }}>
+  const fileInput = document.getElementById('file-upload');
+  const previewArea = document.getElementById('preview-area');
+  const previewList = document.getElementById('preview-list');
+  const totalCountSpan = document.getElementById('total-count');
+  const startImportBtn = document.getElementById('start-import-btn');
+  const logArea = document.getElementById('log-area');
+  const uploadSection = document.getElementById('upload-section');
+
+  let parsedMessages = [];
+
+  // Classification Rules
+  const classifyResource = (text) => {
+    if (!text) return null;
+    const lower = text.toLowerCase();
+    
+    // Priority Rules
+    if (/(mp4|mkv|avi|1080p|2160p|4k|bluray|s01|e01|剧集|电影|remux|hdr|web-dl)/.test(lower)) return categories.find(c => c.name === '视频')?.id;
+    if (/(mp3|flac|wav|dsd|无损|专辑|track)/.test(lower)) return categories.find(c => c.name === '音乐')?.id;
+    if (/(exe|apk|dmg|iso|crack|破解|绿色版|win|mac|android|ios|v[0-9]\.)/.test(lower)) return categories.find(c => c.name === '软件')?.id;
+    if (/(pdf|epub|mobi|azw3|docx|电子书)/.test(lower)) return categories.find(c => c.name === '文档')?.id; // Assuming '文档' exists, user said '文档'
+    if (/(jpg|png|壁纸|套图|写真)/.test(lower)) return categories.find(c => c.name === '图片')?.id;
+    if (/(game|游戏|switch|ps4|steam|xbox)/.test(lower)) return categories.find(c => c.name === '游戏')?.id;
+    if (/(教程|课程|讲义|学习|指南)/.test(lower)) return categories.find(c => c.name === '教程')?.id;
+    if (/(zip|rar|7z)/.test(lower)) return categories.find(c => c.name === '压缩')?.id;
+
+    return null; // Unclassified
+  };
+
+  const renderPreview = (messages) => {
+    previewList.innerHTML = '';
+    parsedMessages = messages.filter(m => m.text); // Filter empty
+    
+    parsedMessages.forEach((msg, index) => {
+      // Extract text content
+      let content = "";
+      if (typeof msg.text === 'string') content = msg.text;
+      else if (Array.isArray(msg.text)) content = msg.text.map(t => typeof t === 'string' ? t : t.text).join('');
+      
+      const title = content.split('\n')[0].substring(0, 80);
+      const suggestedCatId = classifyResource(content);
+      
+      // Store suggestion in msg object for later retrieval if needed, 
+      // but mainly we read from DOM select on submit
+      msg._suggestedCatId = suggestedCatId;
+
+      const tr = document.createElement('tr');
+      tr.className = index % 2 === 0 ? 'bg-white' : 'bg-slate-50';
+      
+      // Options HTML
+      const optionsHtml = categories.map(c => 
+        `<option value="${c.id}" ${c.id === suggestedCatId ? 'selected' : ''}>${c.name}</option>`
+      ).join('');
+      
+      tr.innerHTML = `
+        <td class="px-6 py-4 whitespace-nowrap text-xs text-slate-500">#${msg.id}</td>
+        <td class="px-6 py-4 text-sm text-slate-700">
+          <div class="font-bold mb-1">${title}</div>
+          <div class="text-xs text-slate-400 truncate max-w-xs">${content.substring(0, 50)}...</div>
+        </td>
+        <td class="px-6 py-4 whitespace-nowrap">
+          <select 
+            data-msg-index="${index}"
+            class="block w-full rounded-md border-slate-300 py-1.5 text-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm ${!suggestedCatId ? 'border-red-300 bg-red-50 text-red-900' : 'border-slate-200'}"
+          >
+            <option value="">-- 请选择 --</option>
+            ${optionsHtml}
+          </select>
+        </td>
+      `;
+      previewList.appendChild(tr);
+    });
+
+    totalCountSpan.textContent = parsedMessages.length;
+    previewArea.classList.remove('hidden');
+    uploadSection.classList.add('hidden'); // Hide upload to focus on task
+  };
+
+  const appendLog = (message, type = 'info') => {
+    if (!logArea) return;
+    logArea.classList.remove('hidden');
+    const line = document.createElement('div');
+    line.className = type === 'error' ? 'text-red-400' : type === 'success' ? 'text-green-400' : 'text-slate-300';
+    line.textContent = `[${new Date().toLocaleTimeString()}] ${message}`;
+    logArea.appendChild(line);
+    logArea.scrollTop = logArea.scrollHeight;
+  };
+
+  fileInput?.addEventListener('change', async (e) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    try {
+      const text = await file.text();
+      const json = JSON.parse(text);
+      if (json.messages && Array.isArray(json.messages)) {
+        renderPreview(json.messages);
+      } else {
+        alert('JSON 格式错误: 找不到 messages 数组');
+      }
+    } catch (err) {
+      console.error(err);
+      alert('解析文件失败: ' + err.message);
+    }
+  });
+
+  startImportBtn?.addEventListener('click', async () => {
+    startImportBtn.disabled = true;
+    startImportBtn.textContent = '正在导入...';
+    logArea.innerHTML = '';
+    
+    // 1. Gather Data
+    const itemsToImport = [];
+    const selects = previewList.querySelectorAll('select');
+    
+    selects.forEach(select => {
+      const index = parseInt(select.getAttribute('data-msg-index'));
+      const categoryId = select.value ? parseInt(select.value) : null;
+      const msg = parsedMessages[index];
+      
+      // Inject category_id into message object (using a convention that backend will understand)
+      // Since backend doesn't know about '_categoryId' yet, we need to modify backend.
+      // Or we can construct a new payload format.
+      // Let's attach it to the message object as `_categoryId` and update backend to look for it.
+      if (msg) {
+        msg._categoryId = categoryId;
+        itemsToImport.push(msg);
+      }
+    });
+
+    appendLog(`开始提交 ${itemsToImport.length} 条数据...`, 'info');
+
+    try {
+      const response = await fetch('/api/admin/import', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ messages: itemsToImport }),
+      });
+
+      const result = await response.json();
+
+      if (response.ok) {
+        appendLog(`处理完成!`, 'success');
+        appendLog(`- 成功导入: ${result.importedCount}`, 'success');
+        appendLog(`- 跳过/重复: ${result.skippedCount}`, 'info');
+        appendLog(`- 错误: ${result.errorCount}`, 'info');
+        if (result.errors?.length > 0) {
+           result.errors.forEach(err => appendLog(`Error: ${err}`, 'error'));
+        }
+        startImportBtn.textContent = '导入完成';
+      } else {
+        appendLog(`服务器错误: ${result.error || 'Unknown'}`, 'error');
+        startImportBtn.disabled = false;
+        startImportBtn.textContent = '重试导入';
+      }
+    } catch (error) {
+      appendLog(`网络错误: ${error.message}`, 'error');
+      startImportBtn.disabled = false;
+      startImportBtn.textContent = '重试导入';
+    }
+  });
+</script>

@@ -123,7 +123,7 @@ const getNetdiskConfig = (code: string) => {
           </span>
         )}
         <!-- 对应 updated_at -->
-        <span class="text-xs text-slate-400 font-medium ml-auto"
+        <span class="text-xs text-slate-500 font-medium ml-auto"
           >更新于：{formatTimeAgo(resource.updated_at || resource.created_at)}</span
         >
       </div>
@@ -138,12 +138,12 @@ const getNetdiskConfig = (code: string) => {
       <div class="flex flex-wrap gap-2 mb-8">
         {tags.map((tag: any) => (
           <span
-            class="px-2.5 py-1 bg-slate-100 text-slate-500 text-[11px] font-bold rounded-md hover:bg-slate-200 cursor-pointer"
+            class="px-2.5 py-1 bg-slate-100 text-slate-700 text-[11px] font-bold rounded-md hover:bg-slate-200 cursor-pointer"
           >
             #{tag.name}
           </span>
         ))}
-        {tags.length === 0 && <span class="text-xs text-slate-400">暂无标签</span>}
+        {tags.length === 0 && <span class="text-xs text-slate-500">暂无标签</span>}
       </div>
     </div>
 
@@ -153,11 +153,11 @@ const getNetdiskConfig = (code: string) => {
         <section>
           <div class="flex items-center justify-between mb-6">
             <h3
-              class="text-sm font-black text-slate-400 uppercase tracking-widest flex items-center gap-3"
+              class="text-sm font-black text-slate-600 uppercase tracking-widest flex items-center gap-3"
             >
               下载资源链接库
             </h3>
-            <span class="text-[10px] text-slate-300 font-bold italic"
+            <span class="text-[10px] text-slate-500 font-bold italic"
               >共 {links.length} 个链接</span
             >
           </div>
@@ -173,7 +173,7 @@ const getNetdiskConfig = (code: string) => {
                   >
                     <div class="flex items-center gap-4">
                       <div
-                        class="w-12 h-12 rounded-2xl bg-slate-100 text-slate-400 flex items-center justify-center shrink-0"
+                        class="w-12 h-12 rounded-2xl bg-slate-100 text-slate-500 flex items-center justify-center shrink-0"
                       >
                         <svg
                           class="w-6 h-6"
@@ -186,15 +186,15 @@ const getNetdiskConfig = (code: string) => {
                         >
                       </div>
                       <div class="flex-grow">
-                        <h4 class="text-sm font-black text-slate-400">
+                        <h4 class="text-sm font-black text-slate-500">
                           {link.source_name || "未知网盘"} (已失效)
                         </h4>
-                        <p class="text-xs text-slate-300 italic">
+                        <p class="text-xs text-slate-400 italic">
                           链接已被系统标记为失效，等待管理员补档
                         </p>
                       </div>
                       <button
-                        class="px-4 py-2 bg-slate-200 text-slate-500 text-[10px] font-black rounded-lg cursor-not-allowed"
+                        class="px-4 py-2 bg-slate-200 text-slate-600 text-[10px] font-black rounded-lg cursor-not-allowed"
                         >无法访问</button
                       >
                     </div>
@@ -227,7 +227,7 @@ const getNetdiskConfig = (code: string) => {
                            <div class="relative group/code">
                               <button
                                 onclick={`navigator.clipboard.writeText('${link.share_password}')`}
-                                class="relative px-2 py-0.5 bg-blue-50 text-blue-500 text-[10px] font-black rounded border border-blue-100 flex items-center gap-1 hover:bg-blue-100 transition-colors"
+                                class="relative px-2 py-0.5 bg-blue-50 text-blue-600 text-[10px] font-black rounded border border-blue-100 flex items-center gap-1 hover:bg-blue-100 transition-colors"
                               >
                                 提取码: {link.share_password}
                                 <svg
@@ -243,28 +243,28 @@ const getNetdiskConfig = (code: string) => {
                            </div>
                         ) : (
                           <span
-                            class="px-1.5 py-0.5 bg-slate-100 text-slate-400 text-[9px] font-black rounded uppercase"
+                            class="px-1.5 py-0.5 bg-slate-100 text-slate-500 text-[9px] font-black rounded uppercase"
                             >无需提取码</span
                           >
                         )}
                         <!-- is_valid 状态 -->
-                        <span class="text-[9px] font-bold text-green-500 ml-auto"
+                        <span class="text-[9px] font-bold text-green-600 ml-auto"
                           >链接正常</span
                         >
                       </div>
                       <!-- remark 字段 -->
-                      <p class="text-xs text-slate-400">
+                      <p class="text-xs text-slate-500">
                         {link.remark || "官方不限速，建议及时保存"}
                       </p>
                     </div>
                     <div class="flex items-center gap-3 ml-auto">
                       <div class="text-right hidden sm:block">
                         <p
-                          class="text-[10px] text-slate-300 font-bold uppercase tracking-tighter"
+                          class="text-[10px] text-slate-400 font-bold uppercase tracking-tighter"
                         >
                           {link.sharer_name ? "Sharer" : "Size"}
                         </p>
-                        <p class="text-xs font-bold text-slate-600">{link.sharer_name || formatBytes(link.file_size)}</p>
+                        <p class="text-xs font-bold text-slate-700">{link.sharer_name || formatBytes(link.file_size)}</p>
                       </div>
                       <a
                         href={link.share_url}
@@ -280,7 +280,7 @@ const getNetdiskConfig = (code: string) => {
             })}
             
             {links.length === 0 && (
-              <div class="text-center py-10 bg-slate-50 rounded-2xl border border-dashed border-slate-200 text-slate-400">
+              <div class="text-center py-10 bg-slate-50 rounded-2xl border border-dashed border-slate-200 text-slate-500">
                 暂无下载链接
               </div>
             )}
@@ -311,7 +311,7 @@ const getNetdiskConfig = (code: string) => {
             </div>
 
             <div
-              class="bg-slate-50 rounded-2xl p-6 font-mono text-xs text-slate-600 leading-relaxed whitespace-pre-wrap border border-slate-100"
+              class="bg-slate-50 rounded-2xl p-6 font-mono text-xs text-slate-700 leading-relaxed whitespace-pre-wrap border border-slate-100"
             >
               {resource.file_info}
             </div>
@@ -326,7 +326,7 @@ const getNetdiskConfig = (code: string) => {
             内容描述
           </h3>
           <div
-            class="prose prose-slate max-w-none text-sm text-slate-600 leading-relaxed space-y-4 whitespace-pre-wrap"
+            class="prose prose-slate max-w-none text-sm text-slate-800 leading-relaxed space-y-4 whitespace-pre-wrap"
           >
             {resource.description || "暂无描述..."}
           </div>
@@ -371,7 +371,7 @@ const getNetdiskConfig = (code: string) => {
         <!-- 快速工具 (Triggers & Monitor) -->
         <div class="glass-card rounded-[2rem] p-6">
           <h3
-            class="text-xs font-black text-slate-400 uppercase tracking-widest mb-6"
+            class="text-xs font-black text-slate-500 uppercase tracking-widest mb-6"
           >
             资源维护
           </h3>
